@@ -89,7 +89,6 @@ fun ResultScreen(
 
             Spacer(Modifier.height(20.dp))
 
-            // Карточка результата
             ResultCard(result = result)
 
             Spacer(Modifier.height(24.dp))

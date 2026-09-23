@@ -80,7 +80,6 @@ fun QuestionCard(
 
             Spacer(Modifier.weight(1f))
 
-            // Галочка — если ответ выбран
             if (selectedAnswerId != null) {
                 Icon(
                     imageVector = Icons.Default.Check,

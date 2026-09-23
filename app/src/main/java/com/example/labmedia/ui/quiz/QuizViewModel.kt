@@ -15,7 +15,7 @@ data class QuizUiState(
     val isLoading: Boolean = false,
     val error: String? = null,
     val quiz: Quiz? = null,
-    val selectedAnswers: Map<String, String> = emptyMap() // questionId -> answerId
+    val selectedAnswers: Map<String, String> = emptyMap()
 ) {
     val answeredCount: Int get() = selectedAnswers.size
     val totalCount: Int get() = quiz?.questions?.size ?: 0

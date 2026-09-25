@@ -1,6 +1,8 @@
 package com.example.labmedia.ui.quiz
 
 import androidx.compose.foundation.background
+import androidx.compose.foundation.border
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -16,31 +18,30 @@ import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.itemsIndexed
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.Close
-import androidx.compose.material.icons.filled.Edit
+import androidx.compose.material.icons.automirrored.outlined.Logout
+import androidx.compose.material.icons.filled.Info
+import androidx.compose.material.icons.filled.VisibilityOff
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
-import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBar
 import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.collectAsState
-import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.text.SpanStyle
+import androidx.compose.ui.text.buildAnnotatedString
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
+import androidx.compose.ui.text.withStyle
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import androidx.lifecycle.viewmodel.compose.viewModel
-import com.example.labmedia.data.model.Quiz
 import com.example.labmedia.ui.theme.DarkSurfaceVariant
 import com.example.labmedia.ui.theme.TextSecondary
 import com.example.labmedia.ui.theme.Yellow
@@ -48,44 +49,75 @@ import com.example.labmedia.ui.theme.Yellow
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun QuizScreen(
-    onFinish: (Quiz, Map<String, String>) -> Unit,
-    onBack: () -> Unit,
-    viewModel: QuizViewModel = viewModel()
+    state: QuizUiState,
+    onAnswerSelected: (String, String) -> Unit,
+    onRetry: () -> Unit,
+    onFinish: () -> Unit,
+    onBack: () -> Unit
 ) {
-    val state by viewModel.uiState.collectAsState()
-
     Scaffold(
         topBar = {
             TopAppBar(
-                title = {
-                    Row(verticalAlignment = Alignment.CenterVertically) {
-                        Box(
+                title = { },
+                navigationIcon = { },
+                actions = {
+                    Row(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(start = 16.dp, end = 16.dp, top = 8.dp, bottom = 8.dp),
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        Row(
                             modifier = Modifier
-                                .background(DarkSurfaceVariant, RoundedCornerShape(8.dp))
-                                .padding(horizontal = 10.dp, vertical = 6.dp)
+                                .background(Color(0xFF151515), RoundedCornerShape(10.dp))
+                                .padding(horizontal = 14.dp, vertical = 10.dp),
+                            verticalAlignment = Alignment.CenterVertically
                         ) {
                             Text(
-                                text = "Время на блок: 23:59:59",
-                                color = Color.White,
-                                fontSize = 12.sp
+                                text = buildAnnotatedString {
+                                    withStyle(SpanStyle(color = Color.White)) {
+                                        append("Время на блок: ")
+                                    }
+                                    withStyle(SpanStyle(color = Yellow, fontWeight = FontWeight.Bold)) {
+                                        append("23:59:59")
+                                    }
+                                },
+                                fontSize = 13.sp
                             )
                         }
-                    }
-                },
-                actions = {
-                    IconButton(onClick = { }) {
-                        Icon(
-                            imageVector = Icons.Default.Edit,
-                            contentDescription = "Редактировать",
-                            tint = Color.White
-                        )
-                    }
-                    IconButton(onClick = onBack) {
-                        Icon(
-                            imageVector = Icons.Default.Close,
-                            contentDescription = "Закрыть",
-                            tint = Color.White
-                        )
+
+                        Spacer(Modifier.weight(1f))
+
+                        Box(
+                            modifier = Modifier
+                                .size(40.dp)
+                                .background(Color(0xFF151515), RoundedCornerShape(10.dp)),
+                            contentAlignment = Alignment.Center
+                        ) {
+                            Icon(
+                                imageVector = Icons.Default.VisibilityOff,
+                                contentDescription = "Скрыть",
+                                tint = Color.White,
+                                modifier = Modifier.size(18.dp)
+                            )
+                        }
+
+                        Spacer(Modifier.size(8.dp))
+
+                        Box(
+                            modifier = Modifier
+                                .size(40.dp)
+                                .background(DarkSurfaceVariant, RoundedCornerShape(10.dp))
+                                .clickable(onClick = onBack),
+                            contentAlignment = Alignment.Center
+                        ) {
+                            Icon(
+                                imageVector = Icons.AutoMirrored.Outlined.Logout,
+                                contentDescription = "Выйти",
+                                tint = TextSecondary,
+                                modifier = Modifier.size(18.dp)
+                            )
+                        }
                     }
                 },
                 colors = TopAppBarDefaults.topAppBarColors(
@@ -101,16 +133,11 @@ fun QuizScreen(
         ) {
             when {
                 state.isLoading -> LoadingContent()
-                state.error != null -> ErrorContent(
-                    message = state.error!!,
-                    onRetry = viewModel::loadQuiz
-                )
+                state.error != null -> ErrorContent(state.error, onRetry)
                 state.quiz != null -> QuizList(
                     state = state,
-                    onAnswerSelected = viewModel::selectAnswer,
-                    onFinish = {
-                        onFinish(state.quiz!!, state.selectedAnswers)
-                    }
+                    onAnswerSelected = onAnswerSelected,
+                    onFinish = onFinish
                 )
             }
         }
@@ -171,9 +198,9 @@ private fun QuizList(
         contentPadding = PaddingValues(16.dp),
         verticalArrangement = Arrangement.spacedBy(12.dp)
     ) {
-        itemsIndexed(questions, key = { _, q -> q.id }) { index, question ->
+        itemsIndexed(questions, key = { _, q -> q.id }) { _, question ->
             QuestionCard(
-                number = index + 1,
+                number = question.number,
                 question = question,
                 selectedAnswerId = state.selectedAnswers[question.id],
                 onAnswerSelected = { answerId ->
@@ -183,11 +210,7 @@ private fun QuizList(
         }
 
         item {
-            RemainingInfo(
-                remaining = state.remainingCount,
-                answered = state.answeredCount,
-                total = state.totalCount
-            )
+            RemainingInfo()
         }
 
         item {
@@ -206,10 +229,8 @@ private fun QuizList(
                 )
             ) {
                 Text(
-                    text = if (state.allAnswered)
-                        "Завершить тест"
-                    else
-                        "Ответьте на все вопросы",
+                    text = if (state.allAnswered) "Завершить тест"
+                    else "Ответьте на все вопросы",
                     fontSize = 16.sp,
                     fontWeight = FontWeight.SemiBold
                 )
@@ -220,49 +241,26 @@ private fun QuizList(
 }
 
 @Composable
-private fun RemainingInfo(remaining: Int, answered: Int, total: Int) {
-    Column(
+private fun RemainingInfo() {
+    Row(
         modifier = Modifier
             .fillMaxWidth()
-            .background(DarkSurfaceVariant, RoundedCornerShape(12.dp))
-            .padding(16.dp)
+            .border(1.dp, Yellow, RoundedCornerShape(12.dp))
+            .padding(16.dp),
+        verticalAlignment = Alignment.CenterVertically
     ) {
-        if (remaining > 0) {
-            Text(
-                text = "Осталось $remaining ${plural(remaining, "вопрос", "вопроса", "вопросов")} без ответа",
-                color = Color.White,
-                fontSize = 14.sp,
-                fontWeight = FontWeight.Medium
-            )
-            Spacer(Modifier.height(4.dp))
-            Text(
-                text = "Для успешного прохождения ответьте на все вопросы",
-                color = TextSecondary,
-                fontSize = 12.sp
-            )
-        } else {
-            Text(
-                text = "Все вопросы отвечены ✓",
-                color = Yellow,
-                fontSize = 14.sp,
-                fontWeight = FontWeight.Medium
-            )
-        }
-        Spacer(Modifier.height(6.dp))
-        Text(
-            text = "Отвечено: $answered из $total",
-            color = TextSecondary,
-            fontSize = 12.sp
+        Icon(
+            imageVector = Icons.Default.Info,
+            contentDescription = null,
+            tint = Yellow,
+            modifier = Modifier.size(22.dp)
         )
-    }
-}
-
-private fun plural(n: Int, one: String, few: String, many: String): String {
-    val mod10 = n % 10
-    val mod100 = n % 100
-    return when {
-        mod10 == 1 && mod100 != 11 -> one
-        mod10 in 2..4 && mod100 !in 12..14 -> few
-        else -> many
+        Spacer(Modifier.size(12.dp))
+        Text(
+            text = "Осталось 50 вопросов без ответов. Для успешного прохождения тестирования необходимо ввести ответ на каждый вопрос.",
+            color = Color.White,
+            fontSize = 14.sp,
+            lineHeight = 20.sp
+        )
     }
 }

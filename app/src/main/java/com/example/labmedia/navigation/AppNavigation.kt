@@ -27,33 +27,35 @@ fun AppNavigation() {
     val quizViewModel: QuizViewModel = viewModel()
     val resultViewModel: ResultViewModel = viewModel()
 
+    val state by quizViewModel.uiState.collectAsState()
+
     NavHost(
         navController = navController,
         startDestination = Routes.START
     ) {
         composable(Routes.START) {
             StartScreen(
-                onStartClick = { _ ->
+                state = state,
+                onStartClick = {
+                    quizViewModel.restart()
                     navController.navigate(Routes.QUIZ)
                 },
+                onRetry = { quizViewModel.loadQuiz() },
                 onBack = { }
             )
         }
 
         composable(Routes.QUIZ) {
             QuizScreen(
-                viewModel = quizViewModel,
-                onFinish = { _, _ ->
-                    navController.navigate(Routes.RESULT)
-                },
-                onBack = {
-                    navController.popBackStack()
-                }
+                state = state,
+                onAnswerSelected = quizViewModel::selectAnswer,
+                onRetry = { quizViewModel.loadQuiz() },
+                onFinish = { navController.navigate(Routes.RESULT) },
+                onBack = { navController.popBackStack() }
             )
         }
 
         composable(Routes.RESULT) {
-            val state by quizViewModel.uiState.collectAsState()
             val quiz = state.quiz
             val answers = state.selectedAnswers
 
@@ -63,8 +65,6 @@ fun AppNavigation() {
                 }
 
                 ResultScreen(
-                    quizTitle = quiz.title,
-                    result = result,
                     onBack = {
                         navController.popBackStack(Routes.START, inclusive = false)
                     }

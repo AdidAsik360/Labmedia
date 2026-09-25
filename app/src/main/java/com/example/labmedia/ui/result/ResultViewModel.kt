@@ -2,12 +2,17 @@ package com.example.labmedia.ui.result
 
 import androidx.lifecycle.ViewModel
 import com.example.labmedia.data.model.Quiz
+import java.text.SimpleDateFormat
+import java.util.Date
+import java.util.Locale
 
 data class QuizResult(
     val score: Int,
     val maxScore: Int,
     val passingScore: Int,
     val passed: Boolean,
+    val correctCount: Int,
+    val totalCount: Int,
     val startedAt: String,
     val finishedAt: String
 )
@@ -18,12 +23,11 @@ class ResultViewModel : ViewModel() {
         val maxScore = quiz.maxScore
         val passingScore = maxScore * quiz.passingThresholdPercent / 100
 
-        val score = quiz.questions.sumOf { question ->
-            if (selectedAnswers[question.id] == question.correctAnswerId) {
-                question.weight
-            } else {
-                0
-            }
+        val correctCount = quiz.questions.count { q ->
+            selectedAnswers[q.id] == q.correctAnswerId
+        }
+        val score = quiz.questions.sumOf { q ->
+            if (selectedAnswers[q.id] == q.correctAnswerId) q.weight else 0
         }
 
         return QuizResult(
@@ -31,13 +35,15 @@ class ResultViewModel : ViewModel() {
             maxScore = maxScore,
             passingScore = passingScore,
             passed = score >= passingScore,
+            correctCount = correctCount,
+            totalCount = quiz.questions.size,
             startedAt = currentTime(),
             finishedAt = currentTime()
         )
     }
 
     private fun currentTime(): String {
-        val sdf = java.text.SimpleDateFormat("HH:mm", java.util.Locale.getDefault())
-        return sdf.format(java.util.Date())
+        val sdf = SimpleDateFormat("HH:mm", Locale.getDefault())
+        return sdf.format(Date())
     }
 }

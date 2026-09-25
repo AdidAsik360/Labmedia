@@ -14,10 +14,11 @@ data class QuizUiState(
     val isLoading: Boolean = false,
     val error: String? = null,
     val quiz: Quiz? = null,
-    val selectedAnswers: Map<String, String> = emptyMap() // questionId -> answerId
+    val selectedAnswers: Map<String, String> = emptyMap()
 ) {
     val answeredCount: Int get() = selectedAnswers.size
     val totalCount: Int get() = quiz?.questions?.size ?: 0
+    val remainingCount: Int get() = totalCount - answeredCount
     val allAnswered: Boolean get() = totalCount > 0 && answeredCount == totalCount
 }
 
@@ -55,13 +56,11 @@ class QuizViewModel(
 
     fun selectAnswer(questionId: String, answerId: String) {
         _uiState.update { state ->
-            state.copy(
-                selectedAnswers = state.selectedAnswers + (questionId to answerId)
-            )
+            state.copy(selectedAnswers = state.selectedAnswers + (questionId to answerId))
         }
     }
 
     fun restart() {
-        TODO("Not yet implemented")
+        _uiState.update { it.copy(selectedAnswers = emptyMap(), error = null) }
     }
 }

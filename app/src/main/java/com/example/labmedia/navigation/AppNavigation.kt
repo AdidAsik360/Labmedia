@@ -3,7 +3,6 @@ package com.example.labmedia.navigation
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
-import androidx.compose.runtime.remember
 import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
@@ -11,7 +10,6 @@ import androidx.navigation.compose.rememberNavController
 import com.example.labmedia.ui.quiz.QuizScreen
 import com.example.labmedia.ui.quiz.QuizViewModel
 import com.example.labmedia.ui.result.ResultScreen
-import com.example.labmedia.ui.result.ResultViewModel
 import com.example.labmedia.ui.start.StartScreen
 
 object Routes {
@@ -25,7 +23,6 @@ fun AppNavigation() {
     val navController = rememberNavController()
 
     val quizViewModel: QuizViewModel = viewModel()
-    val resultViewModel: ResultViewModel = viewModel()
 
     val state by quizViewModel.uiState.collectAsState()
 
@@ -56,20 +53,11 @@ fun AppNavigation() {
         }
 
         composable(Routes.RESULT) {
-            val quiz = state.quiz
-            val answers = state.selectedAnswers
-
-            if (quiz != null) {
-                val result = remember(quiz, answers) {
-                    resultViewModel.calculate(quiz, answers)
+            ResultScreen(
+                onBack = {
+                    navController.popBackStack(Routes.START, inclusive = false)
                 }
-
-                ResultScreen(
-                    onBack = {
-                        navController.popBackStack(Routes.START, inclusive = false)
-                    }
-                )
-            }
+            )
         }
     }
 }

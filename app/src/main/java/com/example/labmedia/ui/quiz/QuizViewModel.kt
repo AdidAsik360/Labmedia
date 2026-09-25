@@ -3,7 +3,6 @@ package com.example.labmedia.ui.quiz
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.example.labmedia.data.QuizRepository
-import com.example.labmedia.data.model.Question
 import com.example.labmedia.data.model.Quiz
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
@@ -19,7 +18,6 @@ data class QuizUiState(
 ) {
     val answeredCount: Int get() = selectedAnswers.size
     val totalCount: Int get() = quiz?.questions?.size ?: 0
-    val remainingCount: Int get() = totalCount - answeredCount
     val allAnswered: Boolean get() = totalCount > 0 && answeredCount == totalCount
 }
 
@@ -61,5 +59,9 @@ class QuizViewModel(
                 selectedAnswers = state.selectedAnswers + (questionId to answerId)
             )
         }
+    }
+
+    fun restart() {
+        TODO("Not yet implemented")
     }
 }
